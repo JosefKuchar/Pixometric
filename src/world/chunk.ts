@@ -1,0 +1,3 @@
+class Chunk {
+    voxels: number[];
+}
