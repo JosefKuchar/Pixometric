@@ -13,4 +13,4 @@ gulp.task("watch", () => {
 });
 
 // Run without parameters
-gulp.task("default", ["watch"]);
+gulp.task("default", ["babel", "watch"]);
