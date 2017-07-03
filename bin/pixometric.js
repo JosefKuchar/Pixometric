@@ -1,6 +1,6 @@
 /*!
  * pixometric - v0.0.1
- * Compiled Mon, 03 Jul 2017 13:25:57 UTC
+ * Compiled Mon, 03 Jul 2017 13:31:44 UTC
  *
  * pixometric is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
