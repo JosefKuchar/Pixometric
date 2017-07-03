@@ -5,7 +5,8 @@
   "main": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "pixify -d bin -s src -n pixometric -m --watch -t babelify"
+    "watch": "pixify -d bin -s src -n pixometric -m --watch -t babelify",
+    "build": "pixify -d bin -s src -n pixometric -m -t babelify"
   },
   "repository": {
     "type": "git",
