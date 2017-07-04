@@ -22,11 +22,11 @@ PIXI.loader
     .load(function() {
         // Run Pixometric code
         pixometric = new Pixometric(stage, world, PIXI.loader.resources["sheet.json"].textures, ["dirt"]);
-
+        /*
         for (var i = 0; i < 4096; i++) {
             pixometric.world.aoL[1][0].voxels[i] = 0;
         }
-        pixometric.world.aoL[1][0].voxels[4095] = 1;
+        pixometric.world.aoL[1][0].voxels[4095] = 1;*/
 
         pixometric.world.generateSprites();
 

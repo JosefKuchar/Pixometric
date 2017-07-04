@@ -1,6 +1,6 @@
 /*!
  * pixometric - v0.0.3
- * Compiled Mon, 03 Jul 2017 16:36:20 UTC
+ * Compiled Tue, 04 Jul 2017 17:14:16 UTC
  *
  * pixometric is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
@@ -174,10 +174,8 @@ var World = function () {
     /**
      * Creates an instance of World.
      * @todo Add option to disable rotation for better performance
-     * @todo Occulusion culling
      * @todo Frustrum culling
      * @todo Top-down view
-     * @todo Optimize rotation
      * @memberof World
      */
     function World() {
@@ -187,7 +185,7 @@ var World = function () {
         this.aoL = ArrayHelpers.generate2DFilledClasses(3, 3, _chunk2.default);
 
         // 0 - 3
-        this.rotation = 0;
+        this.rotation = 3;
     }
 
     /**
@@ -281,7 +279,7 @@ var World = function () {
 
         /**
          * Rotate world
-         * 
+         * @todo Optimize this
          * @param {Number} rotation 
          * @memberof World
          */
@@ -311,7 +309,80 @@ var World = function () {
     }, {
         key: "occlusionCulling",
         value: function occlusionCulling() {
-            // 
+            // Check "top"
+            for (var chunkX = 0; chunkX < this.aoL.length; chunkX++) {
+                for (var chunkY = 0; chunkY < this.aoL[0].length; chunkY++) {
+                    for (var x = 0; x < 16; x++) {
+                        for (var y = 0; y < 16; y++) {
+                            this.cull(chunkX, chunkY, x, y, 15);
+                        }
+                    }
+                }
+            }
+
+            // Check "left"
+            for (var chunkX = 0; chunkX < this.aoL.length; chunkX++) {
+                for (var x = 0; x < 16; x++) {
+                    for (var z = 0; z < 15; z++) {
+                        this.cull(chunkX, this.aoL[0].length - 1, x, 15, z);
+                    }
+                }
+            }
+
+            // Check "right"
+            for (var chunkY = 0; chunkY < this.aoL[0].length; chunkY++) {
+                for (var y = 0; y < 16; y++) {
+                    for (var z = 0; z < 15; z++) {
+                        this.cull(this.aoL.length - 1, chunkY, 15, y, z);
+                    }
+                }
+            }
+        }
+    }, {
+        key: "cull",
+        value: function cull(chunkX, chunkY, x, y, z) {
+            var found = false;
+
+            while (true) {
+                if (z < 0) {
+                    break;
+                }
+
+                if (y < 0) {
+                    if (chunkY - 1 < 0) {
+                        break;
+                    } else {
+                        chunkY--;
+                        y = 15;
+                    }
+                }
+
+                if (x < 0) {
+                    if (chunkX - 1 < 0) {
+                        break;
+                    } else {
+                        chunkX--;
+                        x = 15;
+                    }
+                }
+
+                // Calculate 1D index
+                var index = z + y * 16 + x * 16 * 16;
+
+                if (this.aoL[chunkX][chunkY].voxels[index] != 0) {
+                    if (found) {
+                        if (this.aoL[chunkX][chunkY].sprites[index]) {
+                            this.aoL[chunkX][chunkY].sprites[index].visible = false;
+                        }
+                    } else {
+                        found = true;
+                    }
+                }
+
+                x--;
+                y--;
+                z--;
+            }
         }
     }]);
 
