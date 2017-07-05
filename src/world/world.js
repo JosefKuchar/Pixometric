@@ -81,8 +81,8 @@ export default class World {
                     // Check if current voxel is not air
                     if (voxelValue != 0) {
                         // Calculate sprite position
-                        var spriteX = ((voxelX - voxelY) + (x - y) * Pixometric.config.CHUNK.SIZE) * (32 / 2);
-                        var spriteY = ((voxelX + voxelY) + (x + y) * Pixometric.config.CHUNK.SIZE) * (32 / 4) - voxelZ * (32 / 2);
+                        var spriteX = ((voxelX - voxelY) + (x - y) * Pixometric.config.CHUNK.SIZE) * (Pixometric.config.SPRITE.SIZE / 2);
+                        var spriteY = ((voxelX + voxelY) + (x + y) * Pixometric.config.CHUNK.SIZE) * (Pixometric.config.SPRITE.SIZE / 4) - voxelZ * (Pixometric.config.SPRITE.SIZE / 2);
                         
                         // Create sprite from current block value
                         var sprite = new PIXI.Sprite(Pixometric.textures[Pixometric.textureLookup[voxelValue - 1]]);

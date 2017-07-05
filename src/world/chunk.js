@@ -1,7 +1,7 @@
 import * as ArrayHelpers from "../helpers/array";
 
 /**
- * 
+ * Segment of World
  * @export
  * @class Chunk
  */

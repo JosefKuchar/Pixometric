@@ -2,6 +2,9 @@ var config = {
     CHUNK: {
         SIZE: 16,
         HEIGHT: 16
+    },
+    SPRITE: {
+        SIZE: 32
     }
 }
 
