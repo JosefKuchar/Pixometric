@@ -2,7 +2,6 @@ import * as ArrayHelpers from "../helpers/array";
 
 /**
  * 
- * @todo Add possibility to change Chunk dimenstions
  * @export
  * @class Chunk
  */
@@ -14,8 +13,7 @@ export default class Chunk {
      * @memberof Chunk
      */
     constructor(x, y) {
-        // 16x16x16
-        this.voxels = ArrayHelpers.generateFilled(4096, 1);
+        this.voxels = ArrayHelpers.generateFilled(Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.HEIGHT, 1);
         this.sprites = [];
         this.x = x;
         this.y = y;

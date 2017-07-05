@@ -1,11 +1,26 @@
 /*!
  * pixometric - v0.0.3
- * Compiled Tue, 04 Jul 2017 17:14:16 UTC
+ * Compiled Wed, 05 Jul 2017 12:32:20 UTC
  *
  * pixometric is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
  */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.pixometric = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+var config = {
+    CHUNK: {
+        SIZE: 16,
+        HEIGHT: 16
+    }
+};
+
+exports.default = config;
+
+},{}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -33,7 +48,7 @@ var Pixometric = function Pixometric(stage, world, textures, textureLookup) {
 
 exports.default = Pixometric;
 
-},{"../world/world":4}],2:[function(require,module,exports){
+},{"../world/world":5}],3:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -107,7 +122,7 @@ function generate2DFilledClasses(width, height, object) {
     return array;
 }
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -124,7 +139,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 /**
  * 
- * @todo Add possibility to change Chunk dimenstions
  * @export
  * @class Chunk
  */
@@ -138,8 +152,7 @@ var Chunk =
 function Chunk(x, y) {
   _classCallCheck(this, Chunk);
 
-  // 16x16x16
-  this.voxels = ArrayHelpers.generateFilled(4096, 1);
+  this.voxels = ArrayHelpers.generateFilled(Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.HEIGHT, 1);
   this.sprites = [];
   this.x = x;
   this.y = y;
@@ -147,7 +160,7 @@ function Chunk(x, y) {
 
 exports.default = Chunk;
 
-},{"../helpers/array":2}],4:[function(require,module,exports){
+},{"../helpers/array":3}],5:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -224,9 +237,9 @@ var World = function () {
                     // Voxels in current chunk
                     for (var i = 0; i < this.aoL[chunkX][chunkY].voxels.length; i++) {
                         // Calculate position from 1d index
-                        var voxelZ = i % 16;
-                        var voxelY = Math.floor(i / 16) % 16;
-                        var voxelX = Math.floor(i / (16 * 16));
+                        var voxelZ = i % Pixometric.config.CHUNK.SIZE;
+                        var voxelY = Math.floor(i / Pixometric.config.CHUNK.SIZE) % Pixometric.config.CHUNK.SIZE;
+                        var voxelX = Math.floor(i / (Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE));
 
                         // Calculate rotated real voxel coordinates
                         // TODO: Optimize this 
@@ -236,19 +249,19 @@ var World = function () {
                                 var tmpY = voxelY;
                                 break;
                             case 1:
-                                var tmpX = 16 - voxelY - 1;
+                                var tmpX = Pixometric.config.CHUNK.SIZE - voxelY - 1;
                                 var tmpY = voxelX;
                                 break;
                             case 2:
-                                var tmpX = 16 - voxelX - 1;
-                                var tmpY = 16 - voxelY - 1;
+                                var tmpX = Pixometric.config.CHUNK.SIZE - voxelX - 1;
+                                var tmpY = Pixometric.config.CHUNK.SIZE - voxelY - 1;
                                 break;
                             case 3:
                                 var tmpX = voxelY;
-                                var tmpY = 16 - voxelX - 1;
+                                var tmpY = Pixometric.config.CHUNK.SIZE - voxelX - 1;
                         }
 
-                        var voxelIndex = voxelZ + tmpY * 16 + tmpX * 16 * 16;
+                        var voxelIndex = voxelZ + tmpY * Pixometric.config.CHUNK.SIZE + tmpX * Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE;
 
                         // Get voxel block value
                         var voxelValue = this.aoL[chunkX][chunkY].voxels[voxelIndex];
@@ -256,8 +269,8 @@ var World = function () {
                         // Check if current voxel is not air
                         if (voxelValue != 0) {
                             // Calculate sprite position
-                            var spriteX = (voxelX - voxelY + (x - y) * 16) * (32 / 2);
-                            var spriteY = (voxelX + voxelY + (x + y) * 16) * (32 / 4) - voxelZ * (32 / 2);
+                            var spriteX = (voxelX - voxelY + (x - y) * Pixometric.config.CHUNK.SIZE) * (32 / 2);
+                            var spriteY = (voxelX + voxelY + (x + y) * Pixometric.config.CHUNK.SIZE) * (32 / 4) - voxelZ * (32 / 2);
 
                             // Create sprite from current block value
                             var sprite = new PIXI.Sprite(Pixometric.textures[Pixometric.textureLookup[voxelValue - 1]]);
@@ -312,9 +325,9 @@ var World = function () {
             // Check "top"
             for (var chunkX = 0; chunkX < this.aoL.length; chunkX++) {
                 for (var chunkY = 0; chunkY < this.aoL[0].length; chunkY++) {
-                    for (var x = 0; x < 16; x++) {
-                        for (var y = 0; y < 16; y++) {
-                            this.cull(chunkX, chunkY, x, y, 15);
+                    for (var x = 0; x < Pixometric.config.CHUNK.SIZE; x++) {
+                        for (var y = 0; y < Pixometric.config.CHUNK.SIZE; y++) {
+                            this.cull(chunkX, chunkY, x, y, Pixometric.config.CHUNK.HEIGHT - 1);
                         }
                     }
                 }
@@ -322,18 +335,18 @@ var World = function () {
 
             // Check "left"
             for (var chunkX = 0; chunkX < this.aoL.length; chunkX++) {
-                for (var x = 0; x < 16; x++) {
-                    for (var z = 0; z < 15; z++) {
-                        this.cull(chunkX, this.aoL[0].length - 1, x, 15, z);
+                for (var x = 0; x < Pixometric.config.CHUNK.SIZE; x++) {
+                    for (var z = 0; z < Pixometric.config.CHUNK.HEIGHT - 1; z++) {
+                        this.cull(chunkX, this.aoL[0].length - 1, x, Pixometric.config.CHUNK.SIZE, z);
                     }
                 }
             }
 
             // Check "right"
             for (var chunkY = 0; chunkY < this.aoL[0].length; chunkY++) {
-                for (var y = 0; y < 16; y++) {
-                    for (var z = 0; z < 15; z++) {
-                        this.cull(this.aoL.length - 1, chunkY, 15, y, z);
+                for (var y = 0; y < Pixometric.config.CHUNK.SIZE; y++) {
+                    for (var z = 0; z < Pixometric.config.CHUNK.HEIGHT - 1; z++) {
+                        this.cull(this.aoL.length - 1, chunkY, Pixometric.config.CHUNK.SIZE - 1, y, z);
                     }
                 }
             }
@@ -353,7 +366,7 @@ var World = function () {
                         break;
                     } else {
                         chunkY--;
-                        y = 15;
+                        y = Pixometric.config.CHUNK.SIZE - 1;
                     }
                 }
 
@@ -362,12 +375,12 @@ var World = function () {
                         break;
                     } else {
                         chunkX--;
-                        x = 15;
+                        x = Pixometric.config.CHUNK.SIZE - 1;
                     }
                 }
 
                 // Calculate 1D index
-                var index = z + y * 16 + x * 16 * 16;
+                var index = z + y * Pixometric.config.CHUNK.SIZE + x * Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE;
 
                 if (this.aoL[chunkX][chunkY].voxels[index] != 0) {
                     if (found) {
@@ -391,7 +404,7 @@ var World = function () {
 
 exports.default = World;
 
-},{"../helpers/array":2,"./chunk":3}],5:[function(require,module,exports){
+},{"../helpers/array":3,"./chunk":4}],6:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -399,19 +412,25 @@ var _core = require("./core/core");
 
 var _core2 = _interopRequireDefault(_core);
 
+var _config = require("./core/config");
+
+var _config2 = _interopRequireDefault(_config);
+
 var _world = require("./world/world");
 
 var _world2 = _interopRequireDefault(_world);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+// Add global config to Pixometric variable
+_core2.default.config = _config2.default;
 _core2.default.World = _world2.default;
 
 global.Pixometric = _core2.default;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./core/core":1,"./world/world":4}]},{},[5])(5)
+},{"./core/config":1,"./core/core":2,"./world/world":5}]},{},[6])(6)
 });
 
 

@@ -49,9 +49,9 @@ export default class World {
                 // Voxels in current chunk
                 for (var i = 0; i < this.aoL[chunkX][chunkY].voxels.length; i++) {
                     // Calculate position from 1d index
-                    var voxelZ = i % 16;
-                    var voxelY = (Math.floor(i / 16)) % 16;
-                    var voxelX = Math.floor(i / (16 * 16));
+                    var voxelZ = i % Pixometric.config.CHUNK.SIZE;
+                    var voxelY = (Math.floor(i / Pixometric.config.CHUNK.SIZE)) % Pixometric.config.CHUNK.SIZE;
+                    var voxelX = Math.floor(i / (Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE));
 
                     // Calculate rotated real voxel coordinates
                     // TODO: Optimize this 
@@ -61,19 +61,19 @@ export default class World {
                             var tmpY = voxelY;
                             break;
                         case 1:
-                            var tmpX = 16 - voxelY - 1;
+                            var tmpX = Pixometric.config.CHUNK.SIZE - voxelY - 1;
                             var tmpY = voxelX;
                             break;
                         case 2:
-                            var tmpX = 16 - voxelX - 1;
-                            var tmpY = 16 - voxelY - 1;
+                            var tmpX = Pixometric.config.CHUNK.SIZE - voxelX - 1;
+                            var tmpY = Pixometric.config.CHUNK.SIZE - voxelY - 1;
                             break;
                         case 3:
                             var tmpX = voxelY;
-                            var tmpY = 16 - voxelX - 1;
+                            var tmpY = Pixometric.config.CHUNK.SIZE - voxelX - 1;
                     }
 
-                    var voxelIndex = voxelZ + tmpY*16 + tmpX*16*16;
+                    var voxelIndex = voxelZ + tmpY * Pixometric.config.CHUNK.SIZE + tmpX * Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE;
 
                     // Get voxel block value
                     var voxelValue = this.aoL[chunkX][chunkY].voxels[voxelIndex];
@@ -81,8 +81,8 @@ export default class World {
                     // Check if current voxel is not air
                     if (voxelValue != 0) {
                         // Calculate sprite position
-                        var spriteX = ((voxelX - voxelY) + (x - y) * 16) * (32 / 2);
-                        var spriteY = ((voxelX + voxelY) + (x + y) * 16) * (32 / 4) - voxelZ * (32 / 2);
+                        var spriteX = ((voxelX - voxelY) + (x - y) * Pixometric.config.CHUNK.SIZE) * (32 / 2);
+                        var spriteY = ((voxelX + voxelY) + (x + y) * Pixometric.config.CHUNK.SIZE) * (32 / 4) - voxelZ * (32 / 2);
                         
                         // Create sprite from current block value
                         var sprite = new PIXI.Sprite(Pixometric.textures[Pixometric.textureLookup[voxelValue - 1]]);
@@ -131,9 +131,9 @@ export default class World {
         // Check "top"
         for (var chunkX = 0; chunkX < this.aoL.length; chunkX++) {
             for (var chunkY = 0; chunkY < this.aoL[0].length; chunkY++) {
-                for (var x = 0; x < 16; x++) {
-                    for (var y = 0; y < 16; y++) {
-                        this.cull(chunkX, chunkY, x, y, 15);
+                for (var x = 0; x < Pixometric.config.CHUNK.SIZE; x++) {
+                    for (var y = 0; y < Pixometric.config.CHUNK.SIZE; y++) {
+                        this.cull(chunkX, chunkY, x, y, Pixometric.config.CHUNK.HEIGHT - 1);
                     }
                 }
             }
@@ -141,18 +141,18 @@ export default class World {
 
         // Check "left"
         for (var chunkX = 0; chunkX < this.aoL.length; chunkX++) {
-            for (var x = 0; x < 16; x++) {
-                for (var z = 0; z < 15; z++) {
-                    this.cull(chunkX, this.aoL[0].length - 1, x, 15, z);
+            for (var x = 0; x < Pixometric.config.CHUNK.SIZE; x++) {
+                for (var z = 0; z < Pixometric.config.CHUNK.HEIGHT - 1; z++) {
+                    this.cull(chunkX, this.aoL[0].length - 1, x, Pixometric.config.CHUNK.SIZE, z);
                 }
             } 
         }
         
         // Check "right"
         for (var chunkY = 0; chunkY < this.aoL[0].length; chunkY++) {
-            for (var y = 0; y < 16; y++) {
-                for (var z = 0; z < 15; z++) {
-                    this.cull(this.aoL.length - 1, chunkY, 15, y, z);
+            for (var y = 0; y < Pixometric.config.CHUNK.SIZE; y++) {
+                for (var z = 0; z < Pixometric.config.CHUNK.HEIGHT - 1; z++) {
+                    this.cull(this.aoL.length - 1, chunkY, Pixometric.config.CHUNK.SIZE - 1, y, z);
                 }
             }
         }
@@ -171,7 +171,7 @@ export default class World {
                     break;
                 } else {
                     chunkY--;
-                    y = 15;
+                    y = Pixometric.config.CHUNK.SIZE - 1;
                 }
             }
 
@@ -180,12 +180,12 @@ export default class World {
                     break;
                 } else {
                     chunkX--;
-                    x = 15;
+                    x = Pixometric.config.CHUNK.SIZE - 1;
                 }
             }
 
             // Calculate 1D index
-            var index = z + y * 16 + x * 16 * 16;
+            var index = z + y * Pixometric.config.CHUNK.SIZE + x * Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE;
 
             if (this.aoL[chunkX][chunkY].voxels[index] != 0) {
                 if (found) {
