@@ -1,6 +1,6 @@
 /*!
  * pixometric - v0.0.3
- * Compiled Wed, 05 Jul 2017 12:32:20 UTC
+ * Compiled Fri, 07 Jul 2017 19:02:50 UTC
  *
  * pixometric is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
@@ -15,6 +15,9 @@ var config = {
     CHUNK: {
         SIZE: 16,
         HEIGHT: 16
+    },
+    SPRITE: {
+        SIZE: 32
     }
 };
 
@@ -48,7 +51,7 @@ var Pixometric = function Pixometric(stage, world, textures, textureLookup) {
 
 exports.default = Pixometric;
 
-},{"../world/world":5}],3:[function(require,module,exports){
+},{"../world/world":8}],3:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -138,7 +141,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /**
- * 
+ * Segment of World
  * @export
  * @class Chunk
  */
@@ -166,12 +169,253 @@ exports.default = Chunk;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+exports.default = generateSprites;
+/**
+ * Generate PIXI sprites from Area of Interest
+ * 
+ * @export
+ * @param {Chunk[][]} aoL 
+ * @param {Number} rotation 
+ */
+function generateSprites(aoL, rotation) {
+    // AoL Chunk x
+    for (var x = 0; x < aoL.length; x++) {
+        // AoL Chunk y
+        for (var y = 0; y < aoL[0].length; y++) {
+            // Calculate rotated real coordinates, without specific function for performance
+            // Thanks to tulevik.EU (http://www.indiedb.com/games/office-management-101/features/rotating-a-25d-isometric-map)
+            switch (rotation) {
+                case 0:
+                    var chunkX = x;
+                    var chunkY = y;
+                    break;
+                case 1:
+                    var chunkX = aoL.length - y - 1;
+                    var chunkY = x;
+                    break;
+                case 2:
+                    var chunkX = aoL.length - x - 1;
+                    var chunkY = aoL[0].length - y - 1;
+                    break;
+                case 3:
+                    var chunkX = y;
+                    var chunkY = aoL[0].length - x - 1;
+            }
+
+            // Voxels in current chunk
+            for (var i = 0; i < aoL[chunkX][chunkY].voxels.length; i++) {
+                // Calculate position from 1d index
+                var voxelZ = i % Pixometric.config.CHUNK.SIZE;
+                var voxelY = Math.floor(i / Pixometric.config.CHUNK.SIZE) % Pixometric.config.CHUNK.SIZE;
+                var voxelX = Math.floor(i / (Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE));
+
+                // Calculate rotated real voxel coordinates
+                // TODO: Optimize this 
+                switch (rotation) {
+                    case 0:
+                        var tmpX = voxelX;
+                        var tmpY = voxelY;
+                        break;
+                    case 1:
+                        var tmpX = Pixometric.config.CHUNK.SIZE - voxelY - 1;
+                        var tmpY = voxelX;
+                        break;
+                    case 2:
+                        var tmpX = Pixometric.config.CHUNK.SIZE - voxelX - 1;
+                        var tmpY = Pixometric.config.CHUNK.SIZE - voxelY - 1;
+                        break;
+                    case 3:
+                        var tmpX = voxelY;
+                        var tmpY = Pixometric.config.CHUNK.SIZE - voxelX - 1;
+                }
+
+                var voxelIndex = voxelZ + tmpY * Pixometric.config.CHUNK.SIZE + tmpX * Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE;
+
+                // Get voxel block value
+                var voxelValue = aoL[chunkX][chunkY].voxels[voxelIndex];
+
+                // Check if current voxel is not air
+                if (voxelValue != 0) {
+                    // Calculate sprite position
+                    var spriteX = (voxelX - voxelY + (x - y) * Pixometric.config.CHUNK.SIZE) * (Pixometric.config.SPRITE.SIZE / 2);
+                    var spriteY = (voxelX + voxelY + (x + y) * Pixometric.config.CHUNK.SIZE) * (Pixometric.config.SPRITE.SIZE / 4) - voxelZ * (Pixometric.config.SPRITE.SIZE / 2);
+
+                    // Create sprite from current block value
+                    var sprite = new PIXI.Sprite(Pixometric.textures[Pixometric.textureLookup[voxelValue - 1]]);
+
+                    // Add reference to current chunk for culling and unloading
+                    aoL[x][y].sprites[i] = sprite;
+
+                    // Set calculated values as position
+                    sprite.x = spriteX;
+                    sprite.y = spriteY;
+
+                    // Add sprite to the stage
+                    Pixometric.stage.addChild(sprite);
+                }
+            }
+        }
+    }
+}
+
+},{}],6:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.default = occlusionCulling;
+
+/**
+ * Cull none visible voxels (behind each other)
+ * 
+ * @export
+ * @param {Chunk[][]} aoL 
+ */
+function occlusionCulling(aoL) {
+    // Check "top"
+    for (var chunkX = 0; chunkX < aoL.length; chunkX++) {
+        for (var chunkY = 0; chunkY < aoL[0].length; chunkY++) {
+            for (var x = 0; x < Pixometric.config.CHUNK.SIZE; x++) {
+                for (var y = 0; y < Pixometric.config.CHUNK.SIZE; y++) {
+                    cull(aoL, chunkX, chunkY, x, y, Pixometric.config.CHUNK.HEIGHT - 1);
+                }
+            }
+        }
+    }
+
+    // Check "left"
+    for (var chunkX = 0; chunkX < aoL.length; chunkX++) {
+        for (var x = 0; x < Pixometric.config.CHUNK.SIZE; x++) {
+            for (var z = 0; z < Pixometric.config.CHUNK.HEIGHT - 1; z++) {
+                cull(aoL, chunkX, aoL[0].length - 1, x, Pixometric.config.CHUNK.SIZE, z);
+            }
+        }
+    }
+
+    // Check "right"
+    for (var chunkY = 0; chunkY < aoL[0].length; chunkY++) {
+        for (var y = 0; y < Pixometric.config.CHUNK.SIZE; y++) {
+            for (var z = 0; z < Pixometric.config.CHUNK.HEIGHT - 1; z++) {
+                cull(aoL, aoL.length - 1, chunkY, Pixometric.config.CHUNK.SIZE - 1, y, z);
+            }
+        }
+    }
+}
+
+/**
+ * Occlusion culling helper
+ * 
+ * @param {Chunk[][]} aoL
+ * @param {Number} chunkX 
+ * @param {Number} chunkY 
+ * @param {Number} x 
+ * @param {Number} y 
+ * @param {Number} z 
+ */
+function cull(aoL, chunkX, chunkY, x, y, z) {
+    var found = false;
+
+    while (true) {
+        if (z < 0) {
+            break;
+        }
+
+        if (y < 0) {
+            if (chunkY - 1 < 0) {
+                break;
+            } else {
+                chunkY--;
+                y = Pixometric.config.CHUNK.SIZE - 1;
+            }
+        }
+
+        if (x < 0) {
+            if (chunkX - 1 < 0) {
+                break;
+            } else {
+                chunkX--;
+                x = Pixometric.config.CHUNK.SIZE - 1;
+            }
+        }
+
+        // Calculate 1D index
+        var index = z + y * Pixometric.config.CHUNK.SIZE + x * Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE;
+
+        if (aoL[chunkX][chunkY].voxels[index] != 0) {
+            if (found) {
+                if (aoL[chunkX][chunkY].sprites[index]) {
+                    aoL[chunkX][chunkY].sprites[index].visible = false;
+                }
+            } else {
+                found = true;
+            }
+        }
+
+        x--;
+        y--;
+        z--;
+    }
+}
+
+},{}],7:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.default = rotate;
+
+var _generateSprites = require("./generate-sprites");
+
+var _generateSprites2 = _interopRequireDefault(_generateSprites);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Rotate world
+ * 
+ * @export
+ * @param {Chunk[][]} aoL 
+ * @param {Number} rotation 
+ */
+function rotate(aoL, rotation) {
+    for (var x = 0; x < aoL.length; x++) {
+        for (var y = 0; y < aoL[0].length; y++) {
+            for (var i = 0; i < aoL[0][0].sprites.length; i++) {
+                if (aoL[x][y].sprites[i]) {
+                    aoL[x][y].sprites[i].destroy();
+                }
+            }
+        }
+    }
+    (0, _generateSprites2.default)(aoL, rotation);
+}
+
+},{"./generate-sprites":5}],8:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _chunk = require("./chunk");
 
 var _chunk2 = _interopRequireDefault(_chunk);
+
+var _occulusionCulling = require("./manipulation/occulusion-culling");
+
+var _occulusionCulling2 = _interopRequireDefault(_occulusionCulling);
+
+var _generateSprites2 = require("./manipulation/generate-sprites");
+
+var _generateSprites3 = _interopRequireDefault(_generateSprites2);
+
+var _rotate2 = require("./manipulation/rotate");
+
+var _rotate3 = _interopRequireDefault(_rotate2);
 
 var _array = require("../helpers/array");
 
@@ -202,97 +446,33 @@ var World = function () {
     }
 
     /**
-     * Generate PIXI sprites from Area of Interest
+     * Occlusion cullling algorithm
+     * 
      * @memberof World
      */
 
 
     _createClass(World, [{
+        key: "occlusionCulling",
+        value: function occlusionCulling() {
+            (0, _occulusionCulling2.default)(this.aoL);
+        }
+
+        /**
+         * Generate PIXI sprites from Area of Interest
+         * 
+         * @memberof World
+         */
+
+    }, {
         key: "generateSprites",
         value: function generateSprites() {
-            // AoL Chunk x
-            for (var x = 0; x < this.aoL.length; x++) {
-                // AoL Chunk y
-                for (var y = 0; y < this.aoL[0].length; y++) {
-                    // Calculate rotated real coordinates, without specific function for performance
-                    // Thanks to tulevik.EU (http://www.indiedb.com/games/office-management-101/features/rotating-a-25d-isometric-map)
-                    switch (this.rotation) {
-                        case 0:
-                            var chunkX = x;
-                            var chunkY = y;
-                            break;
-                        case 1:
-                            var chunkX = this.aoL.length - y - 1;
-                            var chunkY = x;
-                            break;
-                        case 2:
-                            var chunkX = this.aoL.length - x - 1;
-                            var chunkY = this.aoL[0].length - y - 1;
-                            break;
-                        case 3:
-                            var chunkX = y;
-                            var chunkY = this.aoL[0].length - x - 1;
-                    }
-
-                    // Voxels in current chunk
-                    for (var i = 0; i < this.aoL[chunkX][chunkY].voxels.length; i++) {
-                        // Calculate position from 1d index
-                        var voxelZ = i % Pixometric.config.CHUNK.SIZE;
-                        var voxelY = Math.floor(i / Pixometric.config.CHUNK.SIZE) % Pixometric.config.CHUNK.SIZE;
-                        var voxelX = Math.floor(i / (Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE));
-
-                        // Calculate rotated real voxel coordinates
-                        // TODO: Optimize this 
-                        switch (this.rotation) {
-                            case 0:
-                                var tmpX = voxelX;
-                                var tmpY = voxelY;
-                                break;
-                            case 1:
-                                var tmpX = Pixometric.config.CHUNK.SIZE - voxelY - 1;
-                                var tmpY = voxelX;
-                                break;
-                            case 2:
-                                var tmpX = Pixometric.config.CHUNK.SIZE - voxelX - 1;
-                                var tmpY = Pixometric.config.CHUNK.SIZE - voxelY - 1;
-                                break;
-                            case 3:
-                                var tmpX = voxelY;
-                                var tmpY = Pixometric.config.CHUNK.SIZE - voxelX - 1;
-                        }
-
-                        var voxelIndex = voxelZ + tmpY * Pixometric.config.CHUNK.SIZE + tmpX * Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE;
-
-                        // Get voxel block value
-                        var voxelValue = this.aoL[chunkX][chunkY].voxels[voxelIndex];
-
-                        // Check if current voxel is not air
-                        if (voxelValue != 0) {
-                            // Calculate sprite position
-                            var spriteX = (voxelX - voxelY + (x - y) * Pixometric.config.CHUNK.SIZE) * (32 / 2);
-                            var spriteY = (voxelX + voxelY + (x + y) * Pixometric.config.CHUNK.SIZE) * (32 / 4) - voxelZ * (32 / 2);
-
-                            // Create sprite from current block value
-                            var sprite = new PIXI.Sprite(Pixometric.textures[Pixometric.textureLookup[voxelValue - 1]]);
-
-                            // Add reference to current chunk for culling and unloading
-                            this.aoL[x][y].sprites[i] = sprite;
-
-                            // Set calculated values as position
-                            sprite.x = spriteX;
-                            sprite.y = spriteY;
-
-                            // Add sprite to the stage
-                            Pixometric.stage.addChild(sprite);
-                        }
-                    }
-                }
-            }
+            (0, _generateSprites3.default)(this.aoL, this.rotation);
         }
 
         /**
          * Rotate world
-         * @todo Optimize this
+         * 
          * @param {Number} rotation 
          * @memberof World
          */
@@ -301,100 +481,18 @@ var World = function () {
         key: "rotate",
         value: function rotate(rotation) {
             this.rotation = rotation;
-            for (var x = 0; x < this.aoL.length; x++) {
-                for (var y = 0; y < this.aoL[0].length; y++) {
-                    for (var i = 0; i < this.aoL[0][0].sprites.length; i++) {
-                        if (this.aoL[x][y].sprites[i]) {
-                            this.aoL[x][y].sprites[i].destroy();
-                        }
-                    }
-                }
-            }
-            this.generateSprites();
+            (0, _rotate3.default)(this.aoL, this.rotation);
         }
 
-        /**
-         * Cull none visible voxels (behind each other)
-         * 
-         * @memberof World
-         */
+        // Testing function
 
     }, {
-        key: "occlusionCulling",
-        value: function occlusionCulling() {
-            // Check "top"
-            for (var chunkX = 0; chunkX < this.aoL.length; chunkX++) {
-                for (var chunkY = 0; chunkY < this.aoL[0].length; chunkY++) {
-                    for (var x = 0; x < Pixometric.config.CHUNK.SIZE; x++) {
-                        for (var y = 0; y < Pixometric.config.CHUNK.SIZE; y++) {
-                            this.cull(chunkX, chunkY, x, y, Pixometric.config.CHUNK.HEIGHT - 1);
-                        }
-                    }
+        key: "unloadChunk",
+        value: function unloadChunk(x, y) {
+            for (var i = 0; i < Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.HEIGHT; i++) {
+                if (this.aoL[x][y].sprites[i]) {
+                    this.aoL[x][y].sprites[i].destroy();
                 }
-            }
-
-            // Check "left"
-            for (var chunkX = 0; chunkX < this.aoL.length; chunkX++) {
-                for (var x = 0; x < Pixometric.config.CHUNK.SIZE; x++) {
-                    for (var z = 0; z < Pixometric.config.CHUNK.HEIGHT - 1; z++) {
-                        this.cull(chunkX, this.aoL[0].length - 1, x, Pixometric.config.CHUNK.SIZE, z);
-                    }
-                }
-            }
-
-            // Check "right"
-            for (var chunkY = 0; chunkY < this.aoL[0].length; chunkY++) {
-                for (var y = 0; y < Pixometric.config.CHUNK.SIZE; y++) {
-                    for (var z = 0; z < Pixometric.config.CHUNK.HEIGHT - 1; z++) {
-                        this.cull(this.aoL.length - 1, chunkY, Pixometric.config.CHUNK.SIZE - 1, y, z);
-                    }
-                }
-            }
-        }
-    }, {
-        key: "cull",
-        value: function cull(chunkX, chunkY, x, y, z) {
-            var found = false;
-
-            while (true) {
-                if (z < 0) {
-                    break;
-                }
-
-                if (y < 0) {
-                    if (chunkY - 1 < 0) {
-                        break;
-                    } else {
-                        chunkY--;
-                        y = Pixometric.config.CHUNK.SIZE - 1;
-                    }
-                }
-
-                if (x < 0) {
-                    if (chunkX - 1 < 0) {
-                        break;
-                    } else {
-                        chunkX--;
-                        x = Pixometric.config.CHUNK.SIZE - 1;
-                    }
-                }
-
-                // Calculate 1D index
-                var index = z + y * Pixometric.config.CHUNK.SIZE + x * Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE;
-
-                if (this.aoL[chunkX][chunkY].voxels[index] != 0) {
-                    if (found) {
-                        if (this.aoL[chunkX][chunkY].sprites[index]) {
-                            this.aoL[chunkX][chunkY].sprites[index].visible = false;
-                        }
-                    } else {
-                        found = true;
-                    }
-                }
-
-                x--;
-                y--;
-                z--;
             }
         }
     }]);
@@ -404,7 +502,7 @@ var World = function () {
 
 exports.default = World;
 
-},{"../helpers/array":3,"./chunk":4}],6:[function(require,module,exports){
+},{"../helpers/array":3,"./chunk":4,"./manipulation/generate-sprites":5,"./manipulation/occulusion-culling":6,"./manipulation/rotate":7}],9:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -430,7 +528,7 @@ global.Pixometric = _core2.default;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./core/config":1,"./core/core":2,"./world/world":5}]},{},[6])(6)
+},{"./core/config":1,"./core/core":2,"./world/world":8}]},{},[9])(9)
 });
 
 
