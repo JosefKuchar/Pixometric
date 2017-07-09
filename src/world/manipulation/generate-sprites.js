@@ -65,6 +65,7 @@ export default function generateSprites(aoL, rotation) {
                 // Check if current voxel is not air
                 if (voxelValue != 0) {
                     // Calculate sprite position
+                    // Thanks Clint Bellanger (http://clintbellanger.net/articles/isometric_math/)
                     var spriteX = ((voxelX - voxelY) + (x - y) * Pixometric.config.CHUNK.SIZE) * (Pixometric.config.SPRITE.SIZE / 2);
                     var spriteY = ((voxelX + voxelY) + (x + y) * Pixometric.config.CHUNK.SIZE) * (Pixometric.config.SPRITE.SIZE / 4) - voxelZ * (Pixometric.config.SPRITE.SIZE / 2);
 

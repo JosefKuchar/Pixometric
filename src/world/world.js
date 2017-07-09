@@ -49,13 +49,4 @@ export default class World {
         this.rotation = rotation;
         rotate(this.aoL, this.rotation);
     }
-
-    // Testing function
-    unloadChunk(x, y) {
-        for (var i = 0; i < Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.HEIGHT; i++) {
-            if (this.aoL[x][y].sprites[i]) {
-                this.aoL[x][y].sprites[i].destroy();
-            }
-        }
-    }
 }
