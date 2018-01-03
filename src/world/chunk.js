@@ -14,8 +14,7 @@ export default class Chunk {
      */
     constructor(x, y) {
         this.voxels = ArrayHelpers.generateFilled(Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.HEIGHT, 1);
-        this.sprites = [];
         this.x = x;
         this.y = y;
-    }
+    }   
 }

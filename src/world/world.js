@@ -10,14 +10,25 @@ export default class World {
      * @todo Add option to disable rotation for better performance
      * @todo Frustrum culling
      * @todo Top-down view
+     * @param {Function} loadChunkCB Callback loading function
      * @memberof World
      */
-    constructor() {
-        // Area of Interest, need to be recalculated after zooming
-        this.aoL = ArrayHelpers.generate2DFilledClasses(3, 3, Chunk);
+    constructor(loadChunkCB) {
+        // Area of Interest, size need to be recalculated after zooming
+        this.aoL = ArrayHelpers.generate2D(3, 3);
 
-        // 0 - 3
+        // Rotation of world, 0 - 3
         this.rotation = 3;
+
+        // Store reference of chunk loader
+        this.loadChunkCB = loadChunkCB;
+        
+        // Load initial chunks
+        for (var x = 0; x < this.aoL.length; x++) {
+            for (var y = 0; y < this.aoL[0].length; y++) {
+                this.aoL[x][y] = loadChunkCB(x, y);
+            }
+        }
     }
 
 

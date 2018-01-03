@@ -1,6 +1,6 @@
 /*!
  * pixometric - v0.0.3
- * Compiled Fri, 07 Jul 2017 19:02:50 UTC
+ * Compiled Thu, 24 Aug 2017 19:55:33 UTC
  *
  * pixometric is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
@@ -43,7 +43,7 @@ var Pixometric = function Pixometric(stage, world, textures, textureLookup) {
 
     this.world = world;
 
-    // Make this global for easy access 
+    // Make this global for easy access
     Pixometric.stage = stage;
     Pixometric.textures = textures;
     Pixometric.textureLookup = textureLookup;
@@ -156,7 +156,6 @@ function Chunk(x, y) {
   _classCallCheck(this, Chunk);
 
   this.voxels = ArrayHelpers.generateFilled(Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.HEIGHT, 1);
-  this.sprites = [];
   this.x = x;
   this.y = y;
 };
@@ -201,6 +200,14 @@ function generateSprites(aoL, rotation) {
                     var chunkX = y;
                     var chunkY = aoL[0].length - x - 1;
             }
+            // Create container for chunk
+            var chunkContainer = new PIXI.Container();
+
+            // Add container to scene
+            Pixometric.stage.addChild(chunkContainer);
+
+            // Add reference to current chunk
+            aoL[chunkX][chunkY].container = chunkContainer;
 
             // Voxels in current chunk
             for (var i = 0; i < aoL[chunkX][chunkY].voxels.length; i++) {
@@ -237,21 +244,19 @@ function generateSprites(aoL, rotation) {
                 // Check if current voxel is not air
                 if (voxelValue != 0) {
                     // Calculate sprite position
+                    // Thanks Clint Bellanger (http://clintbellanger.net/articles/isometric_math/)
                     var spriteX = (voxelX - voxelY + (x - y) * Pixometric.config.CHUNK.SIZE) * (Pixometric.config.SPRITE.SIZE / 2);
                     var spriteY = (voxelX + voxelY + (x + y) * Pixometric.config.CHUNK.SIZE) * (Pixometric.config.SPRITE.SIZE / 4) - voxelZ * (Pixometric.config.SPRITE.SIZE / 2);
 
                     // Create sprite from current block value
                     var sprite = new PIXI.Sprite(Pixometric.textures[Pixometric.textureLookup[voxelValue - 1]]);
 
-                    // Add reference to current chunk for culling and unloading
-                    aoL[x][y].sprites[i] = sprite;
-
                     // Set calculated values as position
                     sprite.x = spriteX;
                     sprite.y = spriteY;
 
-                    // Add sprite to the stage
-                    Pixometric.stage.addChild(sprite);
+                    // Add sprite to the container
+                    chunkContainer.addChild(sprite);
                 }
             }
         }
@@ -389,6 +394,7 @@ function rotate(aoL, rotation) {
             }
         }
     }
+
     (0, _generateSprites2.default)(aoL, rotation);
 }
 
@@ -433,16 +439,30 @@ var World = function () {
      * @todo Add option to disable rotation for better performance
      * @todo Frustrum culling
      * @todo Top-down view
+     * @param {Function} loadChunkCB Callback loading function
      * @memberof World
      */
-    function World() {
+    function World(loadChunkCB) {
         _classCallCheck(this, World);
 
-        // Area of Interest, need to be recalculated after zooming
-        this.aoL = ArrayHelpers.generate2DFilledClasses(3, 3, _chunk2.default);
+        // Area of Interest, size need to be recalculated after zooming
+        this.aoL = ArrayHelpers.generate2D(3, 3);
 
-        // 0 - 3
+        // Rotation of world, 0 - 3
         this.rotation = 3;
+
+        this.offset = {
+            x: 0,
+            y: 0
+        };
+
+        this.loadChunkCB = loadChunkCB;
+
+        for (var x = 0; x < this.aoL.length; x++) {
+            for (var y = 0; y < this.aoL[0].length; y++) {
+                this.aoL[x][y] = loadChunkCB(x, y);
+            }
+        }
     }
 
     /**
@@ -483,18 +503,6 @@ var World = function () {
             this.rotation = rotation;
             (0, _rotate3.default)(this.aoL, this.rotation);
         }
-
-        // Testing function
-
-    }, {
-        key: "unloadChunk",
-        value: function unloadChunk(x, y) {
-            for (var i = 0; i < Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.SIZE * Pixometric.config.CHUNK.HEIGHT; i++) {
-                if (this.aoL[x][y].sprites[i]) {
-                    this.aoL[x][y].sprites[i].destroy();
-                }
-            }
-        }
     }]);
 
     return World;
@@ -518,17 +526,23 @@ var _world = require("./world/world");
 
 var _world2 = _interopRequireDefault(_world);
 
+var _chunk = require("./world/chunk");
+
+var _chunk2 = _interopRequireDefault(_chunk);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Add global config to Pixometric variable
 _core2.default.config = _config2.default;
+
 _core2.default.World = _world2.default;
+_core2.default.Chunk = _chunk2.default;
 
 global.Pixometric = _core2.default;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./core/config":1,"./core/core":2,"./world/world":8}]},{},[9])(9)
+},{"./core/config":1,"./core/core":2,"./world/chunk":4,"./world/world":8}]},{},[9])(9)
 });
 
 

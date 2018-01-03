@@ -29,6 +29,14 @@ export default function generateSprites(aoL, rotation) {
                     var chunkX = y;
                     var chunkY = aoL[0].length - x - 1;
             }
+            // Create container for chunk
+            var chunkContainer = new PIXI.Container();
+
+            // Add container to scene
+            Pixometric.stage.addChild(chunkContainer);
+
+            // Add reference to current chunk
+            aoL[chunkX][chunkY].container = chunkContainer;
 
             // Voxels in current chunk
             for (var i = 0; i < aoL[chunkX][chunkY].voxels.length; i++) {
@@ -72,15 +80,12 @@ export default function generateSprites(aoL, rotation) {
                     // Create sprite from current block value
                     var sprite = new PIXI.Sprite(Pixometric.textures[Pixometric.textureLookup[voxelValue - 1]]);
 
-                    // Add reference to current chunk for culling and unloading
-                    aoL[x][y].sprites[i] = sprite;
-
                     // Set calculated values as position
                     sprite.x = spriteX;
                     sprite.y = spriteY;
 
-                    // Add sprite to the stage
-                    Pixometric.stage.addChild(sprite);
+                    // Add sprite to the container
+                    chunkContainer.addChild(sprite);
                 }
             }
         }

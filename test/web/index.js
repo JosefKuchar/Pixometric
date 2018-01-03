@@ -9,9 +9,12 @@ document.body.appendChild(renderer.view);
 
 // Create stage (container)
 var stage = new PIXI.Container();
+stage.displayList = new PIXI.DisplayList();
 
 // Create Pixometric world
-var world = new Pixometric.World();
+var world = new Pixometric.World((x, y) => {
+    return new Pixometric.Chunk(x, y);
+});
 
 // Init Pixometric
 var pixometric;
@@ -19,7 +22,7 @@ var pixometric;
 // Load texture atlas
 PIXI.loader
     .add("sheet.json")
-    .load(function() {
+    .load(() => {
         // Run Pixometric code
         pixometric = new Pixometric(stage, world, PIXI.loader.resources["sheet.json"].textures, ["dirt"]);
         /*
@@ -42,7 +45,7 @@ function render() {
     var thisLoop = new Date;
     var fps = 1000 / (thisLoop - lastLoop);
     lastLoop = thisLoop;
-    console.log(fps);
+    //console.log(fps);
 
     // Request new game frame
     requestAnimationFrame(render);

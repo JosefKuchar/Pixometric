@@ -17,5 +17,6 @@ export default function rotate(aoL, rotation) {
             }
         }
     }
+    
     generateSprites(aoL, rotation);
 }
