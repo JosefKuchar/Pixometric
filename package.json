@@ -23,10 +23,10 @@
   },
   "homepage": "https://github.com/JosefKuchar/Pixometric#readme",
   "devDependencies": {
-    "babel-cli": "^6.24.1",
-    "babel-preset-env": "^1.5.2",
-    "babelify": "^7.3.0",
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babelify": "^8.0.0",
     "pixi-display": "^1.1.1",
-    "pixi.js": "^4.5.3"
+    "pixi.js": "^4.6.2"
   }
 }
